@@ -26,7 +26,7 @@
 
 (defn- artifact-sym
   [{:keys [groupId artifactId]}]
-  (symbol (if (= groupId artifactId)
+  (symbol (if (or (not groupId) (= groupId artifactId))
             artifactId
             (str groupId "/" artifactId))))
 
@@ -64,24 +64,28 @@
 
 (defn- deploy-repositories
   [pom-zip]
-  (let [dist (zx/xml1-> pom-zip :distributionManagement)]
+  (when-let [dist (zx/xml1-> pom-zip :distributionManagement)]
     {:releases (zx/xml1-> dist :repository :url zx/text)
      :snapshots (zx/xml1-> dist :snapshotRepository :url zx/text)}))
 
 (defn- build
   [pom-zip]
-  (let [bld (zx/xml1-> pom-zip :build)]
+  (when-let [bld (zx/xml1-> pom-zip :build)]
     {:source-paths [(zx/xml1-> bld :sourceDirectory zx/text)]
      :test-paths [(zx/xml1-> bld :testSourceDirectory zx/text)]
      :resource-paths (into [] (zx/xml-> bld :resources :resource :directory zx/text))}))
 
 (defn- lein-project-info
   [xz]
-  (assoc (merge (project xz) (build xz))
-    :dependencies (dependencies xz)
-    :repositories (repositories xz)
-    :deploy-repositories (deploy-repositories xz)
-    :parent (parent xz)))
+  (let [attrs {:dependencies (dependencies xz)
+               :repositories (repositories xz)
+               :deploy-repositories (deploy-repositories xz)
+               :parent (parent xz)}
+        attrs (filter (fn [[k v]]
+                        (if (coll? v) (not-empty v) v))
+                      attrs)]
+    (into (merge (project xz) (build xz))
+          attrs)))
 
 (defn- format-dependencies
   [deps]
@@ -97,7 +101,7 @@
 (defn- format-parent
   [parent]
   (let [rel (:relativePath parent)
-        p [(artifact-sym parent)]]
+        p [(artifact-sym parent) (:version parent)]]
     (if rel
       (conj p :relative-path rel)
       p)))
@@ -108,7 +112,9 @@
         info (assoc info
                :dependencies (format-dependencies dependencies)
                :parent (format-parent parent))
-        info (into {} (filter (fn [[k v]] v) info))
+        info (into {} (filter (fn [[k v]]
+                                (if (coll? v) (not-empty v) v))
+                              info))
         pf `(~'defproject ~(artifact-sym project) ~(:version project)
             ~@(mapcat (fn [[k v]] [k v]) info))]
     pf))
