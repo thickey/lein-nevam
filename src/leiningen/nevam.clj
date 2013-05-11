@@ -5,7 +5,7 @@
 (defn ^:no-project-needed nevam
   "Reverse engineer your maven pom.xml files."
   [project & args]
-  (if project
+  (if-not (seq project)
     (println "project.clj file already exists") ;; TODO accept :force
     (let [dir (System/getProperty "user.dir")
           f (io/file (str dir "/pom.xml"))]
