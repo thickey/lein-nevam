@@ -1,4 +1,4 @@
-(defproject lein-nevam "0.1.2"
+(defproject lein-nevam "0.1.3-SNAPSHOT"
   :description "Converts Maven pom.xml files to project.clj files."
   :url "https://github.com/thickey/lein-nevam"
   :license {:name "Eclipse Public License"
