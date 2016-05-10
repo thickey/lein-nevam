@@ -5,7 +5,7 @@ A Leiningen plugin to convert Maven pom.xml files to project.clj files.
 ## Usage
 
 Put `[lein-nevam "0.1.2"]` into the `:plugins` vector of your
-`:user` profile.
+`:user` profile, as shown in the [Leiningen documentation](https://github.com/technomancy/leiningen/blob/stable/doc/PROFILES.md#default-profiles).
 
 lein-nevam is mean to be run in project directory that has an existing pom.xml file but has no project.clj.
 
